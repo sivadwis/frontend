@@ -1,7 +1,15 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
-export default function Navbar() {
+export default function Navbar({ setIsLogin }) {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // ambil role & token
+  const role = localStorage.getItem("role");
+  const token = localStorage.getItem("token");
+
+  // kalau TIDAK ADA TOKEN → JANGAN RENDER NAVBAR
+  if (!token) return null;
 
   const isActive = (path) =>
     location.pathname === path
@@ -12,14 +20,26 @@ export default function Navbar() {
         }
       : {};
 
-  // khusus edit (route dinamis /edit/:id)
-  const isEditActive = location.pathname.startsWith("/edit")
-    ? {
-        background: "rgba(255,255,255,0.25)",
-        fontWeight: 700,
-        boxShadow: "0 4px 10px rgba(0,0,0,.15)",
-      }
-    : {};
+  // LOGOUT
+  const handleLogout = async () => {
+    try {
+      await fetch("http://127.0.0.1:8000/api/logout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      console.log("Logout error (diabaikan)", error);
+    }
+
+    // bersihkan auth
+    localStorage.clear();
+    setIsLogin(false);
+
+    // redirect
+    navigate("/login", { replace: true });
+  };
 
   return (
     <nav
@@ -56,7 +76,7 @@ export default function Navbar() {
         </div>
 
         {/* MENU */}
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <Link
             to="/"
             style={{
@@ -87,7 +107,34 @@ export default function Navbar() {
             Tambah Laporan
           </Link>
 
+          {/* ROLE */}
+          <span
+            style={{
+              color: "white",
+              fontSize: 13,
+              opacity: 0.85,
+              marginLeft: 10,
+            }}
+          >
+            Role: <b>{role}</b>
+          </span>
 
+          {/* LOGOUT */}
+          <button
+            onClick={handleLogout}
+            style={{
+              marginLeft: 12,
+              padding: "8px 14px",
+              borderRadius: 10,
+              border: "none",
+              background: "#ff4d4f",
+              color: "white",
+              cursor: "pointer",
+              fontWeight: 500,
+            }}
+          >
+            Logout
+          </button>
         </div>
       </div>
     </nav>
