@@ -67,3 +67,37 @@ export function hapusLaporan(id) {
     method: "DELETE",
   });
 }
+
+// =====================
+// Fetch image blob (protected)
+// =====================
+// Use this to fetch /api/foto/{filename} which is protected by auth:sanctum.
+// If you store a Bearer token in localStorage it will be sent, otherwise it will use credentials: 'include' (for Sanctum cookies).
+export async function fetchImageBlob(filename) {
+  if (!filename) throw new Error("filename required");
+  const token = localStorage.getItem("token");
+  const url = `${BASE_URL}/foto/${encodeURIComponent(filename)}`;
+
+  const headers = {};
+  const options = { method: "GET", headers };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+    // do not send credentials for bearer token
+  } else {
+    // for Sanctum cookie-based auth
+    options.credentials = "include";
+  }
+
+  const res = await fetch(url, options);
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText);
+    const err = new Error(`Gagal mengambil gambar: ${res.status} ${text}`);
+    err.status = res.status;
+    throw err;
+  }
+
+  const blob = await res.blob();
+  return blob;
+}
