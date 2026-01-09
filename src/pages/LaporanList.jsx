@@ -8,13 +8,17 @@ export default function LaporanList() {
   const [data, setData] = useState([]);
   const navigate = useNavigate();
 
+  const role = localStorage.getItem("role"); // 🔐 ambil role
+
   useEffect(() => {
     load();
   }, []);
 
   const load = async () => {
     const res = await getLaporan();
-    setData(res.data);
+    if (res && res.data) {
+      setData(res.data);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -25,10 +29,10 @@ export default function LaporanList() {
 
     const res = await hapusLaporan(id);
     if (res.status) {
-      alert("Laporan berhasil dihapus");
+      alert("✅ Laporan berhasil dihapus");
       load();
     } else {
-      alert("Gagal menghapus laporan");
+      alert("❌ Gagal menghapus laporan");
     }
   };
 
@@ -51,13 +55,7 @@ export default function LaporanList() {
           boxShadow: "0 12px 30px rgba(0, 0, 0, .15)",
         }}
       >
-        <h2
-          style={{
-            marginBottom: 18,
-            color: "#050505ff",
-            textAlign: "center",
-          }}
-        >
+        <h2 style={{ marginBottom: 18, textAlign: "center" }}>
           Daftar Laporan
         </h2>
 
@@ -108,7 +106,7 @@ export default function LaporanList() {
                       }}
                     />
                   ) : (
-                    <span style={{ color: "#999", fontSize: 12 }}>
+                    <span style={{ fontSize: 12, color: "#999" }}>
                       Tidak ada foto
                     </span>
                   )}
@@ -120,50 +118,63 @@ export default function LaporanList() {
                     style={{
                       padding: "6px 12px",
                       borderRadius: 12,
-                      background:
-                        l.status === "baru" ? "#dbeafe" : "#dcfce7",
-                      color:
-                        l.status === "baru" ? "#1e40af" : "#166534",
                       fontWeight: 600,
                       fontSize: 13,
+                      background:
+                        l.status === "baru"
+                          ? "#dbeafe"
+                          : l.status === "diproses"
+                          ? "#fef3c7"
+                          : "#dcfce7",
+                      color:
+                        l.status === "baru"
+                          ? "#1e40af"
+                          : l.status === "diproses"
+                          ? "#92400e"
+                          : "#166534",
                     }}
                   >
                     {l.status}
                   </span>
                 </td>
 
-                {/* AKSI */}
+                {/* AKSI (ADMIN ONLY) */}
                 <td style={{ padding: 10, textAlign: "center" }}>
-                  <button
-                    onClick={() => navigate(`/edit/${l.id}`)}
-                    style={{
-                      marginRight: 8,
-                      padding: "6px 12px",
-                      borderRadius: 8,
-                      border: "none",
-                      background: "#facc15",
-                      color: "#000",
-                      cursor: "pointer",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Edit
-                  </button>
+                  {role === "admin" ? (
+                    <>
+                      <button
+                        onClick={() => navigate(`/edit/${l.id}`)}
+                        style={{
+                          marginRight: 8,
+                          padding: "6px 12px",
+                          borderRadius: 8,
+                          border: "none",
+                          background: "#facc15",
+                          cursor: "pointer",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Edit
+                      </button>
 
-                  <button
-                    onClick={() => handleDelete(l.id)}
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: 8,
-                      border: "none",
-                      background: "#ef4444",
-                      color: "white",
-                      cursor: "pointer",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Hapus
-                  </button>
+                      <button
+                        onClick={() => handleDelete(l.id)}
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: 8,
+                          border: "none",
+                          background: "#ef4444",
+                          color: "white",
+                          cursor: "pointer",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Hapus
+                      </button>
+                    </>
+                  ) : (
+                    <span style={{ color: "#999", fontSize: 13 }}>-</span>
+                  )}
                 </td>
               </tr>
             ))}
