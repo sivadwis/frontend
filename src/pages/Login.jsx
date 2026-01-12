@@ -166,10 +166,18 @@ export default function Login({ setIsLogin }) {
       const data = await res.json();
 
       if (res.ok && data.token) {
+        // store token and minimal user info
         localStorage.setItem("token", data.token);
         if (data.user && data.user.role) localStorage.setItem("role", data.user.role);
+        if (data.user && data.user.name) localStorage.setItem("name", data.user.name);
+
+        // notify parent about login
         setIsLogin && setIsLogin(true);
-        navigate("/", { replace: true });
+
+        // navigate to home page after login
+        // NOTE: make sure your App.jsx has a route for "/home".
+        // If Home is the root "/", change path below to "/".
+        navigate("/home", { replace: true });
       } else {
         setErrorMsg(data.message || "Cek email & password");
       }

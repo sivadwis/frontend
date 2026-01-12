@@ -7,32 +7,22 @@ import {
   FaSignOutAlt,
   FaClipboardList,
   FaPlus,
+  FaHome,
 } from "react-icons/fa";
-
-/**
- * Updated theme: Komunitas / Peduli
- * Palette:
- * - primary: #0ea5a4 (teal)
- * - accent:  #10b981 (green)
- * - bg glass / surface: soft white
- *
- * Save as: src/components/Navbar.jsx
- */
 
 export default function Navbar({ setIsLogin }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  // Komunitas / Peduli theme
   const theme = {
-    primary: "#0ea5a4", // main teal
-    accent: "#10b981", // supportive green
-    surface: "rgba(255,255,255,0.84)",
-    blur: "8px",
-    border: "rgba(6,95,70,0.08)",
-    text: "#0b1220",
-    muted: "#6b7280",
+    primary: "#0ea5a4",
+    accent: "#10b981",
+    surface: "linear-gradient(135deg, #0ea5a4, #10b981)",
+    blur: "6px",
+    border: "rgba(255,255,255,0.06)",
+    textOnPrimary: "#ffffff",
+    mutedOnPrimary: "rgba(255,255,255,0.9)",
     danger: "#ef4444",
   };
 
@@ -53,7 +43,8 @@ export default function Navbar({ setIsLogin }) {
   }, [name, role]);
 
   const navItems = [
-    { to: "/", label: "Data Laporan", icon: <FaClipboardList /> },
+    { to: "/", label: "Home", icon: <FaHome /> },
+    { to: "/laporan", label: "Data Laporan", icon: <FaClipboardList /> },
     { to: "/tambah", label: "Tambah Laporan", icon: <FaPlus /> },
   ];
 
@@ -95,24 +86,26 @@ export default function Navbar({ setIsLogin }) {
       backdropFilter: `blur(${theme.blur})`,
       WebkitBackdropFilter: `blur(${theme.blur})`,
       border: `1px solid ${theme.border}`,
-      boxShadow: "0 8px 30px rgba(2,6,23,0.06)",
+      boxShadow: "0 8px 30px rgba(2,6,23,0.08)",
+      color: theme.textOnPrimary,
     },
-    brand: { display: "flex", gap: 12, alignItems: "center", textDecoration: "none", color: theme.text },
+    brand: { display: "flex", gap: 12, alignItems: "center", textDecoration: "none", color: theme.textOnPrimary },
     logoBox: {
       width: 44,
       height: 44,
       borderRadius: 10,
-      background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})`,
+      background: "#ffffff",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      color: "white",
-      fontWeight: 800,
+      color: theme.primary,
+      fontWeight: 900,
       fontFamily: "'Poppins', sans-serif",
       fontSize: 16,
-      boxShadow: "0 8px 20px rgba(16,185,129,0.12)",
+      boxShadow: "0 6px 18px rgba(2,6,23,0.08)",
+      border: "1px solid rgba(2,6,23,0.06)",
     },
-    brandText: { fontSize: 16, fontWeight: 700, letterSpacing: 0.4 },
+    brandText: { fontSize: 16, fontWeight: 700, letterSpacing: 0.4, color: "white" },
     navCenter: { display: "flex", gap: 8, alignItems: "center" },
     navLinks: { display: "flex", gap: 8, alignItems: "center" },
     link: {
@@ -121,18 +114,18 @@ export default function Navbar({ setIsLogin }) {
       alignItems: "center",
       padding: "8px 12px",
       borderRadius: 999,
-      color: theme.text,
+      color: "rgba(255,255,255,0.95)",
       textDecoration: "none",
       fontWeight: 600,
       fontSize: 14,
       transition: "all .18s ease",
-      opacity: 0.95,
       background: "transparent",
+      opacity: 0.98,
     },
     linkActive: {
-      background: `${theme.primary}10`,
-      color: theme.primary,
-      boxShadow: `inset 0 -4px 0 0 ${theme.primary}10`,
+      background: "rgba(255,255,255,0.12)",
+      color: "white",
+      boxShadow: `inset 0 -4px 0 0 rgba(255,255,255,0.06)`,
       transform: "translateY(-1px)",
     },
     right: { display: "flex", gap: 12, alignItems: "center" },
@@ -143,21 +136,21 @@ export default function Navbar({ setIsLogin }) {
       padding: "6px 10px",
       borderRadius: 999,
       background: "transparent",
-      color: theme.muted,
+      color: theme.mutedOnPrimary,
       fontSize: 13,
     },
     avatar: {
       width: 36,
       height: 36,
       borderRadius: "50%",
-      background: "#fff",
+      background: "rgba(255,255,255,0.95)",
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
-      color: theme.text,
+      color: "#0b1220",
       fontWeight: 700,
       boxShadow: "0 6px 16px rgba(2,6,23,0.06)",
-      border: `1px solid ${theme.border}`,
+      border: `1px solid rgba(255,255,255,0.08)`,
       fontSize: 13,
     },
     logoutBtn: {
@@ -166,12 +159,13 @@ export default function Navbar({ setIsLogin }) {
       alignItems: "center",
       padding: "8px 12px",
       borderRadius: 10,
-      background: theme.danger,
+      background: "linear-gradient(90deg,#ef4444,#dc2626)",
       color: "white",
       border: "none",
       cursor: "pointer",
       fontWeight: 700,
       fontSize: 13,
+      boxShadow: "0 6px 18px rgba(220,38,38,0.18)",
     },
     burger: {
       width: 44,
@@ -183,7 +177,7 @@ export default function Navbar({ setIsLogin }) {
       background: "transparent",
       border: "none",
       cursor: "pointer",
-      color: theme.text,
+      color: "white",
     },
     mobilePanel: {
       position: "absolute",
@@ -194,9 +188,9 @@ export default function Navbar({ setIsLogin }) {
       maxWidth: 1100,
       borderRadius: 12,
       padding: 12,
-      background: theme.surface,
+      background: "rgba(14,165,148,0.12)",
       backdropFilter: `blur(${theme.blur})`,
-      border: `1px solid ${theme.border}`,
+      border: `1px solid rgba(255,255,255,0.06)`,
       boxShadow: "0 12px 40px rgba(2,6,23,0.12)",
       display: "flex",
       flexDirection: "column",
@@ -210,8 +204,8 @@ export default function Navbar({ setIsLogin }) {
         <Link to="/" style={styles.brand} aria-label="LaporOnline - Beranda">
           <div style={styles.logoBox}>LO</div>
           <div>
-            <div style={styles.brandText}>LaporOnline</div>
-            <div style={{ fontSize: 12, color: theme.muted, marginTop: 2 }}>Komunitas peduli lingkungan</div>
+            <div style={styles.brandText}>Lapor Online</div>
+            <div style={{ fontSize: 12, color: theme.mutedOnPrimary, marginTop: 2 }}>Komunitas peduli lingkungan</div>
           </div>
         </Link>
 
@@ -236,8 +230,8 @@ export default function Navbar({ setIsLogin }) {
 
         <div style={styles.right}>
           <div style={styles.pill} title={`Role: ${role}`}>
-            <FaUserCircle style={{ color: theme.primary }} />
-            <span style={{ color: theme.text, fontWeight: 700 }}>{role}</span>
+            <FaUserCircle style={{ color: "white" }} />
+            <span style={{ color: "white", fontWeight: 700 }}>{role}</span>
           </div>
 
           <div
@@ -281,7 +275,7 @@ export default function Navbar({ setIsLogin }) {
               <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
                 {it.icon} <span>{it.label}</span>
               </span>
-              {isActive(it.to) && <span style={{ color: theme.primary, fontWeight: 800 }}>●</span>}
+              {isActive(it.to) && <span style={{ color: "white", fontWeight: 800 }}>●</span>}
             </Link>
           ))}
 
@@ -289,8 +283,8 @@ export default function Navbar({ setIsLogin }) {
             <div style={{ display: "flex", gap: 8, alignItems: "center", flex: 1 }}>
               <div style={{ ...styles.avatar, width: 44, height: 44 }}>{name ? initials : <FaUserCircle />}</div>
               <div>
-                <div style={{ fontWeight: 800, color: theme.text }}>{name || "Pengguna"}</div>
-                <div style={{ fontSize: 12, color: theme.muted }}>{role || "role"}</div>
+                <div style={{ fontWeight: 800, color: "white" }}>{name || "Pengguna"}</div>
+                <div style={{ fontSize: 12, color: theme.mutedOnPrimary }}>{role || "role"}</div>
               </div>
             </div>
 

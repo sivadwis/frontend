@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState } from "react";
+import Home from "./pages/Home";
 import LaporanList from "./pages/LaporanList";
 import LaporanTambah from "./pages/LaporanTambah";
 import LaporanEdit from "./pages/LaporanEdit";
@@ -10,9 +11,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import GuestRoute from "./routes/GuestRoute";
 
 export default function App() {
-  const [isLogin, setIsLogin] = useState(
-    !!localStorage.getItem("token")
-  );
+  const [isLogin, setIsLogin] = useState(!!localStorage.getItem("token"));
 
   return (
     <BrowserRouter>
@@ -41,6 +40,15 @@ export default function App() {
         {/* PROTECTED */}
         <Route
           path="/"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/laporan"
           element={
             <ProtectedRoute>
               <LaporanList />

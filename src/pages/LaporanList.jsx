@@ -16,7 +16,8 @@ import { useNavigate } from "react-router-dom";
 /**
  * LaporanTable.jsx
  * - Modern minimal table view for laporan
- * - Replace your current LaporanList with this for tabular UX
+ * - Includes "Deskripsi" column with truncation + "Selengkapnya" modal
+ * - Fixed duplicate-prop JSX error
  */
 
 const IMAGE_PUBLIC_BASE = "http://127.0.0.1:8000/storage/foto";
@@ -28,14 +29,17 @@ export default function LaporanTable() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const perPage = 10;
-  const [sortKey, setSortKey] = useState("tanggal"); // default sort
-  const [sortDir, setSortDir] = useState("desc"); // asc | desc
+  const [sortKey, setSortKey] = useState("tanggal");
+  const [sortDir, setSortDir] = useState("desc");
 
-  const [imageSrcs, setImageSrcs] = useState({}); // { id: objectUrlOrPublicUrl }
+  const [imageSrcs, setImageSrcs] = useState({});
   const [imgErrors, setImgErrors] = useState({});
   const mountedRef = useRef(true);
   const navigate = useNavigate();
   const role = localStorage.getItem("role");
+
+  const [previewImg, setPreviewImg] = useState(null);
+  const [descModal, setDescModal] = useState(null); // { title, text } | null
 
   useEffect(() => {
     mountedRef.current = true;
@@ -68,38 +72,7 @@ export default function LaporanTable() {
     }
   };
 
-  // fetch images lazily (only for current page's items) to reduce load
-  useEffect(() => {
-    if (!data || data.length === 0) return;
-    let cancelled = false;
-    (async () => {
-      const start = (page - 1) * perPage;
-      const pageItems = filteredSorted.slice(start, start + perPage);
-      for (const item of pageItems) {
-        if (!item.foto) continue;
-        if (imageSrcs[item.id] || imgErrors[item.id]) continue;
-        const filename = item.foto.split("/").pop().split("\\").pop();
-        try {
-          const blob = await fetchImageBlob(filename);
-          if (cancelled || !mountedRef.current) {
-            try { URL.revokeObjectURL(blob); } catch {}
-            break;
-          }
-          const objectUrl = URL.createObjectURL(blob);
-          setImageSrcs((prev) => ({ ...prev, [item.id]: objectUrl }));
-        } catch (err) {
-          console.warn("fetch image failed", item.id, err);
-          setImgErrors((p) => ({ ...p, [item.id]: true }));
-          const publicUrl = `${IMAGE_PUBLIC_BASE}/${encodeURIComponent(filename)}`;
-          setImageSrcs((prev) => ({ ...prev, [item.id]: publicUrl }));
-        }
-      }
-    })();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, page, sortKey, sortDir, query]);
-
-  // search + sort
+  // search + sort + include deskripsi in search
   const filteredSorted = useMemo(() => {
     const q = query.trim().toLowerCase();
     let items = data.filter((r) => {
@@ -134,15 +107,40 @@ export default function LaporanTable() {
   useEffect(() => { if (page > pages) setPage(1); }, [pages]);
 
   const toggleSort = (key) => {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir("asc"); }
   };
 
-  const [previewImg, setPreviewImg] = useState(null);
+  // lazy fetch images for current page
+  useEffect(() => {
+    if (!data || data.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const start = (page - 1) * perPage;
+      const pageItems = filteredSorted.slice(start, start + perPage);
+      for (const item of pageItems) {
+        if (!item.foto) continue;
+        if (imageSrcs[item.id] || imgErrors[item.id]) continue;
+        const filename = item.foto.split("/").pop().split("\\").pop();
+        try {
+          const blob = await fetchImageBlob(filename);
+          if (cancelled || !mountedRef.current) {
+            try { URL.revokeObjectURL(blob); } catch {}
+            break;
+          }
+          const objectUrl = URL.createObjectURL(blob);
+          setImageSrcs((prev) => ({ ...prev, [item.id]: objectUrl }));
+        } catch (err) {
+          console.warn("fetch image failed", item.id, err);
+          setImgErrors((p) => ({ ...p, [item.id]: true }));
+          const publicUrl = `${IMAGE_PUBLIC_BASE}/${encodeURIComponent(filename)}`;
+          setImageSrcs((prev) => ({ ...prev, [item.id]: publicUrl }));
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, page, sortKey, sortDir, query, filteredSorted]);
 
   const handleDelete = async (id) => {
     if (!window.confirm("Yakin ingin menghapus laporan ini?")) return;
@@ -169,13 +167,18 @@ export default function LaporanTable() {
     catch { return d; }
   };
 
+  // truncate helper
+  const truncate = (str, n = 120) => {
+    if (!str) return "-";
+    return str.length > n ? str.slice(0, n).trim() + "…" : str;
+  };
+
   // UI styles (minimal inline)
   const styles = {
     page: { padding: 20, fontFamily: "'Inter', sans-serif", minHeight: "80vh", background: "#f6f9fc" },
-    toolbar: { display: "flex", gap: 12, alignItems: "center", marginBottom: 12 },
     search: { display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 12, background: "white", boxShadow: "0 6px 20px rgba(2,6,23,0.04)" },
     tableWrap: { width: "100%", overflowX: "auto", background: "white", borderRadius: 12, boxShadow: "0 6px 20px rgba(2,6,23,0.04)" },
-    table: { width: "100%", borderCollapse: "collapse", minWidth: 900 },
+    table: { width: "100%", borderCollapse: "collapse", minWidth: 1100 },
     th: { textAlign: "left", padding: "12px 14px", borderBottom: "1px solid #eef2f7", fontWeight: 700, fontSize: 13, color: "#334155", background: "linear-gradient(180deg,#fff,#fbfdff)" },
     td: { padding: "12px 14px", borderBottom: "1px solid #f1f5f9", verticalAlign: "middle", fontSize: 14, color: "#0f172a" },
     thumb: { width: 64, height: 64, objectFit: "cover", borderRadius: 8, border: "1px solid #f1f5f9" },
@@ -188,6 +191,8 @@ export default function LaporanTable() {
     pageNums: { display: "flex", gap: 6, alignItems: "center" },
     pageBtn: { padding: "6px 10px", borderRadius: 8, background: "#fff", border: "1px solid #e6eef7", cursor: "pointer" },
     empty: { padding: 28, textAlign: "center", color: "#64748b" },
+    descCell: { maxWidth: 420, whiteSpace: "normal", overflow: "hidden", textOverflow: "ellipsis" },
+    descMore: { color: "#0ea5a4", cursor: "pointer", fontWeight: 700, marginLeft: 6, fontSize: 13 },
   };
 
   return (
@@ -217,16 +222,17 @@ export default function LaporanTable() {
             <tr>
               <th style={styles.th}>#</th>
               <th style={styles.th}>Foto</th>
-              <th style={styles.th} onClick={() => toggleSort("nama")}>
+              <th style={{ ...styles.th, cursor: "pointer" }} onClick={() => toggleSort("nama")}>
                 Nama&nbsp;
                 {sortKey === "nama" ? (sortDir === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
               </th>
               <th style={styles.th}>Alamat</th>
-              <th style={styles.th} onClick={() => toggleSort("tanggal")}>
+              <th style={{ ...styles.th, cursor: "pointer" }} onClick={() => toggleSort("tanggal")}>
                 Tanggal&nbsp;
                 {sortKey === "tanggal" ? (sortDir === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
               </th>
-              <th style={styles.th} onClick={() => toggleSort("status")}>
+              <th style={styles.th}>Deskripsi</th>
+              <th style={{ ...styles.th, cursor: "pointer" }} onClick={() => toggleSort("status")}>
                 Status&nbsp;
                 {sortKey === "status" ? (sortDir === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
               </th>
@@ -236,11 +242,11 @@ export default function LaporanTable() {
 
           <tbody>
             {total === 0 && !loading && (
-              <tr><td colSpan={7} style={styles.empty}>Tidak ada data.</td></tr>
+              <tr><td colSpan={8} style={styles.empty}>Tidak ada data.</td></tr>
             )}
 
             {loading && (
-              <tr><td colSpan={7} style={{ padding: 24, textAlign: "center" }}><FaSpinner style={{ animation: "spin 1s linear infinite" }} /> Memuat...</td></tr>
+              <tr><td colSpan={8} style={{ padding: 24, textAlign: "center" }}><FaSpinner style={{ animation: "spin 1s linear infinite" }} /> Memuat...</td></tr>
             )}
 
             {!loading && filteredSorted.slice((page - 1) * perPage, page * perPage).map((l, idx) => {
@@ -263,6 +269,23 @@ export default function LaporanTable() {
                   <td style={styles.td}>{l.nama || "-"}</td>
                   <td style={styles.td}>{l.alamat || "-"}</td>
                   <td style={styles.td}>{fmtDate(l.tanggal)}</td>
+
+                  {/* Deskripsi column (truncated) */}
+                  <td style={{ ...styles.td, ...styles.descCell }}>
+                    <span>{truncate(l.deskripsi, 140)}</span>
+                    {l.deskripsi && l.deskripsi.length > 140 && (
+                      <span
+                        onClick={() => setDescModal({ title: l.nama || "Deskripsi", text: l.deskripsi })}
+                        style={styles.descMore}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === "Enter") setDescModal({ title: l.nama || "Deskripsi", text: l.deskripsi }); }}
+                      >
+                        Selengkapnya
+                      </span>
+                    )}
+                  </td>
+
                   <td style={styles.td}>
                     <span style={{ padding: "6px 10px", borderRadius: 999, fontWeight: 700, fontSize: 13, background: l.status === "baru" ? "rgba(59,130,246,0.12)" : l.status === "diproses" ? "rgba(250,204,21,0.12)" : "rgba(16,185,129,0.12)", color: l.status === "baru" ? "#1e40af" : l.status === "diproses" ? "#92400e" : "#065f46" }}>
                       {l.status || "-"}
@@ -310,9 +333,23 @@ export default function LaporanTable() {
         </div>
       </div>
 
+      {/* Preview modal for images */}
       {previewImg && (
         <div onClick={() => setPreviewImg(null)} style={{ position: "fixed", inset: 0, background: "rgba(2,6,23,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
           <img src={previewImg} alt="Preview" style={{ maxWidth: "92%", maxHeight: "86%", borderRadius: 12 }} onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+
+      {/* Deskripsi modal */}
+      {descModal && (
+        <div onClick={() => setDescModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(2,6,23,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "min(880px, 92%)", maxHeight: "86%", overflowY: "auto", background: "#fff", borderRadius: 12, padding: 18, boxShadow: "0 18px 60px rgba(2,6,23,0.3)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <h4 style={{ margin: 0 }}>{descModal.title}</h4>
+              <button onClick={() => setDescModal(null)} style={{ border: "none", background: "transparent", cursor: "pointer", fontSize: 18 }}>✕</button>
+            </div>
+            <div style={{ color: "#0f172a", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{descModal.text}</div>
+          </div>
         </div>
       )}
 
